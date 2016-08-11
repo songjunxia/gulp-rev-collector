@@ -28,9 +28,12 @@ function _getManifestData(file, opts) {
         if (_.isObject(json)) {
             var isRev = 1;
             Object.keys(json).forEach(function (key) {
-                if ( !_.isString(json[key]) || path.basename(json[key]).replace(new RegExp( opts.revSuffix ), '' ) !==  path.basename(key) ) {
-                    isRev = 0;
-                }
+                // if ( !_.isString(json[key]) || path.basename(json[key]).replace(new RegExp( opts.revSuffix ), '' ) !==  path.basename(key) ) {
+                //     isRev = 0;
+                // }
+                if ( !_.isString(json[key]) || path.basename(json[key]).split('?')[0] !== path.basename(key) ) {   
+                    isRev = 0;                                                                                     
+                }                                                                                                  
             });
 
             if (isRev) {
@@ -42,9 +45,11 @@ function _getManifestData(file, opts) {
     return data;
 }
 
-function escPathPattern(pattern) {
-    return pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\^\$\|\/\\]/g, "\\$&");
-}
+function escPathPattern(pattern) {                                                     
+    var rp = pattern.replace(/[\-\[\]\{\}\(\)\*\+\?\.\^\$\|\/\\]/g, "\\$&");           
+    rp = pattern + "(\\?v=(\\d|[a-z]){8,10})*";                                        
+    return rp;                                                                         
+}                                                                                      
 
 function closeDirBySep(dirname) {
     return dirname + (!dirname || new RegExp( escPathPattern('/') + '$' ).test(dirname) ? '' : '/');
@@ -77,14 +82,23 @@ function revCollector(opts) {
             });
         }
 
-        for (var key in manifest) {
-            var patterns = [ escPathPattern(key) ];
-            if (opts.replaceReved) {
-                patterns.push( escPathPattern( (path.dirname(key) === '.' ? '' : closeDirBySep(path.dirname(key)) ) + path.basename(key, path.extname(key)) )
-                            + opts.revSuffix
-                            + escPathPattern( path.extname(key) )
-                        );
-            }
+        // for (var key in manifest) {
+        //     var patterns = [ escPathPattern(key) ];
+        //     if (opts.replaceReved) {
+        //         patterns.push( escPathPattern( (path.dirname(key) === '.' ? '' : closeDirBySep(path.dirname(key)) ) + path.basename(key, path.extname(key)) )
+        //                     + opts.revSuffix
+        //                     + escPathPattern( path.extname(key) )
+        //                 );
+        //     }
+        if (opts.replaceReved) {                                                                                                                                       
+                patterns.push( escPathPattern( (path.dirname(key) === '.' ? '' : closeDirBySep(path.dirname(key)) ) + path.basename(key, path.extname(key)) )              
+                + opts.revSuffix                                                                                                                               
+                + escPathPattern( path.extname(key) ) + "(\\?v=(\\d|[a-z]){8,10})*"                                                                            
+            );                                                                                                                                                 
+        }                                                                                                                                                              
+                                                                                                                                                               
+                                                                                                                                                               
+                                                                                                                                                               
 
             if ( dirReplacements.length ) {
                 dirReplacements.forEach(function (dirRule) {
